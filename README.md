@@ -1,4 +1,4 @@
-# System Wykrywania Smartfonów w Szkołach Podstawowych
+# System automatycznej detekcji smartfonów w szkołach podstawowych w celu poprawy koncentracji uczniów
 
 Aplikacja do monitorowania użycia telefonów komórkowych przez uczniów podczas zajęć lekcyjnych. System został zaprojektowany z myślą o szkołach podstawowych, gdzie problem nieodpowiedniego korzystania ze smartfonów w czasie lekcji jest szczególnie widoczny.
 
