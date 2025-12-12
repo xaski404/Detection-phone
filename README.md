@@ -1,26 +1,26 @@
-# System automatycznej detekcji smartfonów w szkołach podstawowych w celu poprawy koncentracji uczniów
+# Automatic Smartphone Detection System for Elementary Schools to Improve Student Concentration
 
-Aplikacja do monitorowania użycia telefonów komórkowych przez uczniów podczas zajęć lekcyjnych. System został zaprojektowany z myślą o szkołach podstawowych, gdzie problem nieodpowiedniego korzystania ze smartfonów w czasie lekcji jest szczególnie widoczny.
+Application for monitoring mobile phone usage by students during class. The system was designed for elementary schools, where the problem of inappropriate smartphone use during lessons is particularly visible.
 
 ## Problem
 
-W dzisiejszych czasach uczniowie często korzystają z telefonów podczas zajęć, co negatywnie wpływa na koncentrację i wyniki w nauce. Nauczyciele mają trudności z kontrolowaniem tego zjawiska, szczególnie w większych klasach. System został stworzony, aby pomóc w monitorowaniu tego problemu w sposób automatyczny i obiektywny.
+Nowadays, students often use phones during class, which negatively affects concentration and academic performance. Teachers have difficulty controlling this phenomenon, especially in larger classes. The system was created to help monitor this problem automatically and objectively.
 
-## Funkcje
+## Features
 
-- Wykrywanie telefonów w czasie rzeczywistym podczas lekcji przy użyciu modelu YOLOv8
-- Automatyczna anonimizacja twarzy uczniów dla ochrony prywatności (zamazywanie głów przez Roboflow AI)
-- Panel webowy do przeglądania wykryć i zarządzania systemem
-- Historia wszystkich detekcji z możliwością eksportu
-- Konfigurowalne harmonogramy pracy kamery (dopasowane do planu lekcji)
-- Strefy ROI - możliwość definiowania konkretnych miejsc w klasie (ławki, rzędy)
-- Powiadomienia dla nauczycieli:
-  - Email z załączonym zanonimizowanym zdjęciem
-  - SMS z linkiem do zdjęcia
-- Integracja z chmurą do przechowywania zdjęć
-- System logowania dla nauczycieli i administratorów
+- Real-time phone detection during lessons using YOLOv8 model
+- Automatic face anonymization of students for privacy protection (head blurring via Roboflow AI)
+- Web panel for viewing detections and managing the system
+- History of all detections with export capability
+- Configurable camera work schedules (adapted to lesson plans)
+- ROI Zones - ability to define specific locations in the classroom (desks, rows)
+- Notifications for teachers:
+  - Email with anonymized photo attached
+  - SMS with link to photo
+- Cloud integration for photo storage
+- Login system for teachers and administrators
 
-## Struktura Projektu
+## Project Structure
 
 ```
 Detection-phone/
@@ -39,23 +39,23 @@ Detection-phone/
 └── static/
 ```
 
-## Wymagania
+## Requirements
 
 - Python 3.8-3.12 (backend)
-- Node.js 14 lub nowszy (frontend)
-- Kamera internetowa (może być wbudowana w laptopa lub zewnętrzna)
-- Dostęp do internetu (dla Roboflow AI, powiadomień i przechowywania w chmurze)
+- Node.js 14 or newer (frontend)
+- Web camera (can be built-in laptop or external)
+- Internet access (for Roboflow AI, notifications and cloud storage)
 
-## Instalacja
+## Installation
 
-### 1. Pobierz projekt
+### 1. Download the project
 
 ```bash
 git clone <repository-url>
 cd Detection-phone
 ```
 
-### 2. Zainstaluj zależności
+### 2. Install dependencies
 
 Backend (Python):
 ```bash
@@ -67,288 +67,288 @@ Frontend (React):
 npm install
 ```
 
-### 3. Skonfiguruj zmienne środowiskowe
+### 3. Configure environment variables
 
-Utwórz plik `.env` w głównym katalogu:
+Create a `.env` file in the main directory:
 
 ```env
-# Konfiguracja Email
-GMAIL_USER=twoj_email@gmail.com
-GMAIL_APP_PASSWORD=twoje_16_znakowe_haslo_aplikacji
-EMAIL_RECIPIENT=nauczyciel@szkola.pl
+# Email Configuration
+GMAIL_USER=your_email@gmail.com
+GMAIL_APP_PASSWORD=your_16_character_app_password
+EMAIL_RECIPIENT=teacher@school.pl
 
-# Konfiguracja Cloudinary
-CLOUDINARY_CLOUD_NAME=twoja_nazwa_chmury
-CLOUDINARY_API_KEY=twoj_klucz_api
-CLOUDINARY_API_SECRET=twoj_sekret_api
+# Cloudinary Configuration
+CLOUDINARY_CLOUD_NAME=your_cloud_name
+CLOUDINARY_API_KEY=your_api_key
+CLOUDINARY_API_SECRET=your_api_secret
 
-# Konfiguracja SMS (Opcjonalne)
-VONAGE_API_KEY=twoj_klucz_vonage
-VONAGE_API_SECRET=twoj_sekret_vonage
+# SMS Configuration (Optional)
+VONAGE_API_KEY=your_vonage_key
+VONAGE_API_SECRET=your_vonage_secret
 VONAGE_FROM_NUMBER=PhoneDetection
 VONAGE_TO_NUMBER=48123456789
 ```
 
-### 4. Uruchom aplikację
+### 4. Run the application
 
-Musisz uruchomić backend i frontend w osobnych terminalach:
+You need to run the backend and frontend in separate terminals:
 
 Terminal 1 - Backend (Flask):
 ```bash
 flask run --debug --no-reload
 ```
-Backend działa na `http://localhost:5000`
+Backend runs on `http://localhost:5000`
 
 Terminal 2 - Frontend (React):
 ```bash
 npm start
 ```
-Frontend działa na `http://localhost:3000`
+Frontend runs on `http://localhost:3000`
 
-Aplikacja będzie dostępna pod adresem `http://localhost:3000`
+The application will be available at `http://localhost:3000`
 
-Domyślne dane logowania:
-- Nazwa użytkownika: `admin`
-- Hasło: `admin`
+Default login credentials:
+- Username: `admin`
+- Password: `admin`
 
-### 5. Konfiguracja systemu
+### 5. System configuration
 
-1. Zaloguj się do panelu na `http://localhost:3000`
-2. Przejdź do Ustawienia → Ustaw harmonogram kamery (dopasuj do planu lekcji)
-3. Skonfiguruj powiadomienia (Email/SMS) jeśli chcesz otrzymywać alerty
-4. Dostosuj próg pewności detekcji telefonów (domyślnie: 0.2)
-5. Zdefiniuj strefy ROI dla konkretnych miejsc w klasie (szczegóły poniżej)
-6. System automatycznie rozpocznie wykrywanie telefonów w zaplanowanych godzinach
+1. Log in to the panel at `http://localhost:3000`
+2. Go to Settings → Set camera schedule (adjust to lesson plan)
+3. Configure notifications (Email/SMS) if you want to receive alerts
+4. Adjust phone detection confidence threshold (default: 0.2)
+5. Define ROI zones for specific locations in the classroom (details below)
+6. The system will automatically start detecting phones during scheduled hours
 
-## Konfiguracja
+## Configuration
 
-System może być konfigurowany przez stronę Ustawienia:
+The system can be configured through the Settings page:
 
-- Harmonogram tygodniowy - Automatyczna aktywacja kamery na konkretne dni z czasem rozpoczęcia/zakończenia (np. poniedziałek 8:00-14:00)
-- Anonimizacja głów - Ochrona prywatności uczniów (zamazywanie głów przez Roboflow AI)
-- Pewność detekcji telefonów - Dostosuj czułość wykrywania (domyślnie: 0.2, zakres: 0.0-1.0)
-- Kanały powiadomień (Email, SMS) - Preferencje alertów dla nauczycieli
-- Wybór kamery - Wybierz którą kamerę użyć (jeśli masz kilka)
-- Strefy ROI - Zdefiniuj konkretne miejsca w klasie (patrz poniżej)
+- Weekly schedule - Automatic camera activation on specific days with start/end times (e.g., Monday 8:00-14:00)
+- Head anonymization - Student privacy protection (head blurring via Roboflow AI)
+- Phone detection confidence - Adjust detection sensitivity (default: 0.2, range: 0.0-1.0)
+- Notification channels (Email, SMS) - Alert preferences for teachers
+- Camera selection - Choose which camera to use (if you have multiple)
+- ROI Zones - Define specific locations in the classroom (see below)
 
-### Konfiguracja Stref ROI dla Klas
+### ROI Zones Configuration for Classrooms
 
-Strefy ROI (Region of Interest) pozwalają zdefiniować konkretne obszary w klasie, gdzie powinna występować detekcja telefonów. To jest szczególnie przydatne w szkołach, gdzie chcemy monitorować konkretne ławki lub miejsca.
+ROI Zones (Region of Interest) allow you to define specific areas in the classroom where phone detection should occur. This is particularly useful in schools where we want to monitor specific desks or locations.
 
-Korzyści:
-- Monitoruj konkretne ławki lub rzędy
-- Ignoruj obszary, gdzie telefony są dozwolone (np. biurko nauczyciela)
-- Zmniejsz fałszywe alarmy z obiektów w tle
-- Wyciszanie alertów per-strefa (zapobiega spamowi gdy uczeń ciągle używa telefonu)
+Benefits:
+- Monitor specific desks or rows
+- Ignore areas where phones are allowed (e.g., teacher's desk)
+- Reduce false alarms from background objects
+- Per-zone alert muting (prevents spam when a student keeps using their phone)
 
-Jak to skonfigurować:
+How to configure:
 
-1. Załaduj Zdjęcie Konfiguracyjne:
-   - Przejdź do Ustawienia → Sekcja Strefy ROI
-   - Kliknij przycisk "Załaduj Zdjęcie Konfiguracyjne"
-   - System przechwytuje aktualny widok kamery jako tło
+1. Load Configuration Image:
+   - Go to Settings → ROI Zones section
+   - Click the "Load Configuration Image" button
+   - System captures current camera view as background
 
-2. Wybierz Tryb Rysowania:
-   - Pojedyncza Strefa: Rysuj pojedyncze strefy jedna po drugiej
-   - Generator Siatki: Narysuj jeden prostokąt i automatycznie wygeneruj siatkę (idealne dla klas!)
+2. Select Drawing Mode:
+   - Single Zone: Draw individual zones one after another
+   - Grid Generator: Draw one rectangle and automatically generate a grid (perfect for classrooms!)
 
-3. Rysowanie Pojedynczej Strefy:
-   - Kliknij i przeciągnij na obrazie, aby narysować prostokąt
-   - Zwolnij mysz, aby zakończyć
-   - Wprowadź nazwę strefy (np. "Ławka 1", "Rząd 2 - Miejsce 3")
-   - Kliknij "Zapisz Strefę"
+3. Drawing Single Zone:
+   - Click and drag on the image to draw a rectangle
+   - Release mouse to finish
+   - Enter zone name (e.g., "Desk 1", "Row 2 - Seat 3")
+   - Click "Save Zone"
 
-4. Generator Siatki (Zalecane dla Klas):
-   - Narysuj jeden duży prostokąt pokrywający wszystkie miejsca w klasie
-   - Ustaw wiersze (np. 4) i kolumny (np. 5)
-   - Wybierz tryb nazewnictwa:
-     - Sekwencyjne: "Ławka 1", "Ławka 2", ..., "Ławka 20"
-     - Siatka: "R1-M1", "R1-M2", ..., "R4-M5"
-   - Opcjonalnie: Dodaj prefiks (np. "Ławka")
-   - Kliknij "Wygeneruj Siatkę" → Tworzy 20 stref automatycznie!
+4. Grid Generator (Recommended for Classrooms):
+   - Draw one large rectangle covering all seats in the classroom
+   - Set rows (e.g., 4) and columns (e.g., 5)
+   - Choose naming mode:
+     - Sequential: "Desk 1", "Desk 2", ..., "Desk 20"
+     - Grid: "R1-M1", "R1-M2", ..., "R4-M5"
+   - Optional: Add prefix (e.g., "Desk")
+   - Click "Generate Grid" → Creates 20 zones automatically!
 
-5. Edycja Stref:
-   - Przenieś: Kliknij i przeciągnij strefę
-   - Zmień rozmiar: Przeciągnij uchwyty narożników
-   - Zmień nazwę: Kliknij ikonę edycji
-   - Usuń: Kliknij ikonę usuwania
+5. Zone Editing:
+   - Move: Click and drag zone
+   - Resize: Drag corner handles
+   - Rename: Click edit icon
+   - Delete: Click delete icon
 
-6. Auto-Zapis:
-   - Strefy automatycznie zapisują się 2 sekundy po zmianach
-   - Zielone powiadomienie potwierdza zapis
+6. Auto-Save:
+   - Zones automatically save 2 seconds after changes
+   - Green notification confirms save
 
-Wyciszanie Per-Strefa:
+Per-Zone Muting:
 
-Każda strefa ma niezależne 5-minutowe wyciszanie alertów. To zapobiega spamowi, gdy uczeń ciągle używa telefonu:
-
-```
-Przykład:
-14:00 - Telefon w "Ławka 1" → Alert wysłany, "Ławka 1" wyciszona na 5 min
-14:01 - Telefon w "Ławka 2" → Alert wysłany (osobne wyciszanie)
-14:02 - Telefon w "Ławka 1" → Zignorowany (nadal wyciszona)
-14:06 - Telefon w "Ławka 1" → Alert wysłany (wyciszanie wygasło)
-```
-
-Przykładowa Konfiguracja dla Klas:
+Each zone has independent 5-minute alert muting. This prevents spam when a student keeps using their phone:
 
 ```
-4 wiersze × 5 kolumn = 20 stref
+Example:
+14:00 - Phone in "Desk 1" → Alert sent, "Desk 1" muted for 5 min
+14:01 - Phone in "Desk 2" → Alert sent (separate muting)
+14:02 - Phone in "Desk 1" → Ignored (still muted)
+14:06 - Phone in "Desk 1" → Alert sent (muting expired)
+```
+
+Example Configuration for Classrooms:
+
+```
+4 rows × 5 columns = 20 zones
 
 ┌─────────┬─────────┬─────────┬─────────┬─────────┐
-│ Ławka 1 │ Ławka 2 │ Ławka 3 │ Ławka 4 │ Ławka 5 │
+│ Desk 1  │ Desk 2  │ Desk 3  │ Desk 4  │ Desk 5  │
 ├─────────┼─────────┼─────────┼─────────┼─────────┤
-│ Ławka 6 │ Ławka 7 │ Ławka 8 │ Ławka 9 │ Ławka10 │
+│ Desk 6  │ Desk 7  │ Desk 8  │ Desk 9  │ Desk 10 │
 ├─────────┼─────────┼─────────┼─────────┼─────────┤
-│ Ławka11 │ Ławka12 │ Ławka13 │ Ławka14 │ Ławka15 │
+│ Desk 11 │ Desk 12 │ Desk 13 │ Desk 14 │ Desk 15 │
 ├─────────┼─────────┼─────────┼─────────┼─────────┤
-│ Ławka16 │ Ławka17 │ Ławka18 │ Ławka19 │ Ławka20 │
+│ Desk 16 │ Desk 17 │ Desk 18 │ Desk 19 │ Desk 20 │
 └─────────┴─────────┴─────────┴─────────┴─────────┘
 
-Ustawienia Generatora Siatki:
-- Wiersze: 4
-- Kolumny: 5
-- Tryb Nazewnictwa: Sekwencyjne
-- Prefiks: "Ławka"
+Grid Generator Settings:
+- Rows: 4
+- Columns: 5
+- Naming Mode: Sequential
+- Prefix: "Desk"
 
-Wynik: 20 stref z niezależnym wyciszaniem!
+Result: 20 zones with independent muting!
 ```
 
-## Jak To Działa
+## How It Works
 
-System używa wzorca Producer-Consumer dla wydajnej, nieblokującej detekcji:
+The system uses a Producer-Consumer pattern for efficient, non-blocking detection:
 
-### Przegląd Architektury
+### Architecture Overview
 
 ```
 ┌─────────────────────────────────────────────────────────┐
-│         WĄTEK GŁÓWNY - Detekcja w Czasie Rzeczywistym  │
+│         MAIN THREAD - Real-Time Detection               │
 │                                                         │
-│  📷 Kamera → 🔍 Detekcja Telefonów (YOLOv8)           │
+│  📷 Camera → 🔍 Phone Detection (YOLOv8)               │
 │                        │                                │
-│                        ↓ (telefon wykryty)              │
-│                  💾 Zapisz ORYGINALNĄ klatkę            │
+│                        ↓ (phone detected)                │
+│                  💾 Save ORIGINAL frame                 │
 │                        │                                │
 │                        ↓                                │
-│                  📤 Dodaj do Kolejki                   │
+│                  📤 Add to Queue                        │
 └────────────────────────┼────────────────────────────────┘
                          │
-                    Kolejka<filepath>
+                    Queue<filepath>
                          │
                          ↓
 ┌────────────────────────┼────────────────────────────────┐
-│         WĄTEK WORKERA - Anonimizacja Głów Offline       │
+│         WORKER THREAD - Offline Head Anonymization      │
 │                        │                                │
-│                  📥 Pobierz z Kolejki                   │
+│                  📥 Get from Queue                      │
 │                        ↓                                │
-│            👁️ Wykryj Głowy (Roboflow AI)              │
+│            👁️ Detect Heads (Roboflow AI)              │
 │                        ↓                                │
-│            🔒 Zamazuj Głowy (Gaussian 99x99)           │
+│            🔒 Blur Heads (Gaussian 99x99)              │
 │                        ↓                                │
-│            💾 Nadpisz zanonimizowaną wersją            │
+│            💾 Overwrite with anonymized version        │
 │                        ↓                                │
-│            💾 Zapisz do Bazy Danych                    │
+│            💾 Save to Database                         │
 │                        ↓                                │
-│            📧 Wyślij Powiadomienia (Email/SMS)        │
+│            📧 Send Notifications (Email/SMS)           │
 └─────────────────────────────────────────────────────────┘
 ```
 
-### Kluczowe Funkcje:
+### Key Features:
 
-1. Detekcja Telefonów w Czasie Rzeczywistym (Wątek Główny): 
-   - Kamera przechwytuje klatki z prędkością 20-30 FPS
-   - YOLOv8 wykrywa telefony natychmiast
-   - Zapisuje oryginalną klatkę na dysk
-   - Dodaje do kolejki przetwarzania
+1. Real-Time Phone Detection (Main Thread): 
+   - Camera captures frames at 20-30 FPS
+   - YOLOv8 detects phones immediately
+   - Saves original frame to disk
+   - Adds to processing queue
 
-2. Anonimizacja Głów Offline (Wątek Workera): 
-   - Przetwarza kolejkę asynchronicznie
-   - Wykrywa głowy przy użyciu modelu Roboflow AI (pewność ≥ 40%)
-   - Zamazuje cały region głowy rozmyciem Gaussa (99x99, sigma=30)
-   - Nadpisuje oryginalny plik zanonimizowaną wersją
-   - Zapisuje do bazy danych (tylko zanonimizowane obrazy!)
-   - Wysyła powiadomienia jeśli włączone
+2. Offline Head Anonymization (Worker Thread): 
+   - Processes queue asynchronously
+   - Detects heads using Roboflow AI model (confidence ≥ 40%)
+   - Blurs entire head region with Gaussian blur (99x99, sigma=30)
+   - Overwrites original file with anonymized version
+   - Saves to database (only anonymized images!)
+   - Sends notifications if enabled
 
-3. Strefy ROI i Wyciszanie:
-   - Zdefiniuj wiele stref detekcji (np. "ławka 1", "ławka 2")
-   - Wyciszanie per-strefa na 5 minut zapobiega spamowi alertów
-   - Detekcje poza strefami są ignorowane
+3. ROI Zones and Muting:
+   - Define multiple detection zones (e.g., "desk 1", "desk 2")
+   - Per-zone muting for 5 minutes prevents alert spam
+   - Detections outside zones are ignored
 
-Ta architektura zapewnia:
-- Detekcję telefonów w czasie rzeczywistym z prędkością 20-30 FPS (nie blokowana przez anonimizację)
-- Dokładne wykrywanie głów przy użyciu Roboflow AI (dokładność 90%+)
-- Baza danych zawiera tylko zanonimizowane obrazy
-- Operacje nieblokujące
-- Projekt z priorytetem prywatności uczniów
+This architecture ensures:
+- Real-time phone detection at 20-30 FPS (not blocked by anonymization)
+- Accurate head detection using Roboflow AI (90%+ accuracy)
+- Database contains only anonymized images
+- Non-blocking operations
+- Project with priority on student privacy
 
-Szczegółowa architektura systemu: zobacz CURRENT_ARCHITECTURE.md
+Detailed system architecture: see CURRENT_ARCHITECTURE.md
 
-## Stos Technologiczny
+## Tech Stack
 
 ### Backend
 
-- Flask - Framework webowy z ORM SQLAlchemy
-- SQLite - Baza danych
-- YOLOv8 - Detekcja telefonów (Ultralytics)
-- Roboflow AI - Wykrywanie głów do anonimizacji
-- OpenCV - Przetwarzanie obrazu i rozmycie Gaussa
-- Cloudinary - Przechowywanie obrazów w chmurze
-- Vonage API - Powiadomienia SMS
-- Yagmail - Powiadomienia Email
-- Threading - Nieblokująca kolejka przetwarzania
+- Flask - Web framework with SQLAlchemy ORM
+- SQLite - Database
+- YOLOv8 - Phone detection (Ultralytics)
+- Roboflow AI - Head detection for anonymization
+- OpenCV - Image processing and Gaussian blur
+- Cloudinary - Cloud image storage
+- Vonage API - SMS notifications
+- Yagmail - Email notifications
+- Threading - Non-blocking processing queue
 
 ### Frontend
 
-- React 18 z TypeScript
-- Material-UI (MUI) - Komponenty UI
-- React Router - Nawigacja
-- Recharts - Wizualizacja danych
-- Axios - Klient HTTP
-- Chart.js - Dodatkowe wykresy
+- React 18 with TypeScript
+- Material-UI (MUI) - UI components
+- React Router - Navigation
+- Recharts - Data visualization
+- Axios - HTTP client
+- Chart.js - Additional charts
 
-## Prywatność i Bezpieczeństwo
+## Privacy and Security
 
-- Uwierzytelnianie JWT - Bezpieczne sesje użytkowników
-- Bezpieczne przechowywanie haseł (hashowane z Werkzeug)
-- Zarządzanie kluczami API przez zmienne środowiskowe
-- Projekt z priorytetem prywatności uczniów:
-  - Oryginalne klatki są zapisywane tymczasowo
-  - Głowy są wykrywane i zamazywane przy użyciu Roboflow AI
-  - Oryginalne pliki są nadpisywane zanonimizowanymi wersjami
-  - Baza danych zawiera tylko zanonimizowane obrazy
-  - Rozmycie Gaussa (99x99) jest nieodwracalne
-- Gotowe wsparcie HTTPS
+- JWT Authentication - Secure user sessions
+- Secure password storage (hashed with Werkzeug)
+- API key management via environment variables
+- Project with priority on student privacy:
+  - Original frames are saved temporarily
+  - Heads are detected and blurred using Roboflow AI
+  - Original files are overwritten with anonymized versions
+  - Database contains only anonymized images
+  - Gaussian blur (99x99) is irreversible
+- Ready HTTPS support
 
-## Rozwiązywanie Problemów
+## Troubleshooting
 
-### Kamera nie startuje
-- Sprawdź uprawnienia kamery w ustawieniach Windows
-- Zweryfikuj, czy harmonogram kamery jest ustawiony poprawnie
-- Upewnij się, że żadna inna aplikacja nie używa kamery (zamknij Zoom, Teams, OBS, itp.)
-- Spróbuj zrestartować serwer Flask
+### Camera doesn't start
+- Check camera permissions in Windows settings
+- Verify that camera schedule is set correctly
+- Make sure no other application is using the camera (close Zoom, Teams, OBS, etc.)
+- Try restarting the Flask server
 
-### Głowy nie są zamazywane
-- System używa Roboflow AI do wykrywania głów (dokładność 90%+)
-- Sprawdź, czy anonimizacja głów jest włączona w Ustawieniach
-- Zweryfikuj połączenie internetowe (Roboflow wymaga dostępu do API)
-- Sprawdź logi konsoli pod kątem błędów API Roboflow
+### Heads are not being blurred
+- System uses Roboflow AI for head detection (90%+ accuracy)
+- Check if head anonymization is enabled in Settings
+- Verify internet connection (Roboflow requires API access)
+- Check console logs for Roboflow API errors
 
-### Zbyt wiele fałszywych detekcji telefonów
-- Zwiększ próg pewności detekcji telefonów w Ustawieniach (domyślnie: 0.2)
-- Wyższe wartości = mniej fałszywych alarmów (spróbuj 0.3-0.5)
-- Zdefiniuj strefy ROI, aby ograniczyć detekcję do konkretnych obszarów w klasie
+### Too many false phone detections
+- Increase phone detection confidence threshold in Settings (default: 0.2)
+- Higher values = fewer false alarms (try 0.3-0.5)
+- Define ROI zones to limit detection to specific areas in the classroom
 
-### Frontend nie łączy się z backendem
-- Upewnij się, że zarówno Flask (port 5000) jak i React (port 3000) działają
-- Sprawdź, czy `proxy` jest ustawione na `http://localhost:5000` w `package.json`
-- Zweryfikuj, czy CORS jest włączone w backendzie Flask (powinno być automatyczne)
-- Sprawdź konsolę przeglądarki pod kątem błędów CORS
+### Frontend doesn't connect to backend
+- Make sure both Flask (port 5000) and React (port 3000) are running
+- Check if `proxy` is set to `http://localhost:5000` in `package.json`
+- Verify that CORS is enabled in Flask backend (should be automatic)
+- Check browser console for CORS errors
 
-### Powiadomienia nie działają
-- Email: Zweryfikuj, czy Hasło Aplikacji Gmail jest poprawne (16 znaków, bez spacji)
-- SMS: Sprawdź dane uwierzytelniające API Vonage i format numeru telefonu
-- Cloudinary: Zweryfikuj nazwę chmury, klucz API i sekret API
-- Sprawdź logi konsoli pod kątem szczegółowych komunikatów o błędach
+### Notifications don't work
+- Email: Verify that Gmail App Password is correct (16 characters, no spaces)
+- SMS: Check Vonage API credentials and phone number format
+- Cloudinary: Verify cloud name, API key and API secret
+- Check console logs for detailed error messages
 
-## Licencja
+## License
 
 MIT License
