@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   Box,
   Container,
@@ -30,7 +31,16 @@ const Login: React.FC = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-  const { login } = useAuth();
+  const { login, isAuthenticated } = useAuth();
+  const navigate = useNavigate();
+
+  // Redirect if already authenticated
+  useEffect(() => {
+    const token = localStorage.getItem('auth_token');
+    if (token || isAuthenticated) {
+      navigate('/dashboard', { replace: true });
+    }
+  }, [isAuthenticated, navigate]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -96,7 +106,7 @@ const Login: React.FC = () => {
             }}
           >
             <CardContent sx={{ p: 4 }}>
-              {}
+              {/* Logo/Icon */}
               <Box sx={{ display: 'flex', justifyContent: 'center', mb: 3 }}>
                 <Avatar
                   sx={{
@@ -111,7 +121,7 @@ const Login: React.FC = () => {
                 </Avatar>
               </Box>
 
-              {}
+              {/* Title */}
               <Typography
                 variant="h4"
                 align="center"
@@ -138,7 +148,7 @@ const Login: React.FC = () => {
                 Login to your account
               </Typography>
 
-              {}
+              {/* Error Alert */}
               {error && (
                 <Fade in={true}>
                   <Alert
@@ -151,7 +161,7 @@ const Login: React.FC = () => {
                 </Fade>
               )}
 
-              {}
+              {/* Login Form */}
               <Box component="form" onSubmit={handleSubmit} noValidate>
                 <TextField
                   margin="normal"
@@ -237,7 +247,7 @@ const Login: React.FC = () => {
           </Card>
         </Fade>
 
-        {}
+        {/* Footer */}
         <Typography
           variant="caption"
           align="center"

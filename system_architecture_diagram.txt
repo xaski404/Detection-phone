@@ -1,0 +1,86 @@
+DIAGRAM ARCHITEKTURY SYSTEMU - Phone Detection System
+=======================================================
+
+┌─────────────────────────────────────────────────────────────────────────┐
+│                         WARSTWA PREZENTACJI (Frontend)                   │
+│                         React + TypeScript + Material-UI                  │
+└─────────────────────────────────────────────────────────────────────────┘
+                                    │
+                                    │ HTTP/REST API
+                                    │ (Axios, JSON)
+                                    │
+                                    ▼
+┌─────────────────────────────────────────────────────────────────────────┐
+│                      WARSTWA LOGICZNA (Backend)                          │
+│                      Flask + Python                                      │
+│                                                                           │
+│  ┌─────────────────────────────────────────────────────────────────┐   │
+│  │                    Flask Application (app.py)                    │   │
+│  │  • REST API Endpoints                                           │   │
+│  │  • Authentication (Flask-Login)                                 │   │
+│  │  • Video Stream (MJPEG)                                         │   │
+│  │  • Database ORM (SQLAlchemy)                                    │   │
+│  └─────────────────────────────────────────────────────────────────┘   │
+│                                    │                                     │
+│                                    │                                     │
+│  ┌─────────────────────────────────┴─────────────────────────────────┐ │
+│  │              CameraController (camera_controller.py)              │ │
+│  │  ┌─────────────────────────────────────────────────────────────┐  │ │
+│  │  │  Main Thread (Producer)                                     │  │ │
+│  │  │  • Camera Capture (OpenCV)                                  │  │ │
+│  │  │  • Frame Preprocessing (CLAHE, Unsharp Masking)            │  │ │
+│  │  │  • YOLOv8 Detection (yolov8m.pt)                           │  │ │
+│  │  │  • Save Original Frame                                      │  │ │
+│  │  │  • Queue.put() → Add to Queue                              │  │ │
+│  │  └─────────────────────────────────────────────────────────────┘  │ │
+│  │                            │                                        │ │
+│  │                            │ Queue (thread-safe)                    │ │
+│  │                            ▼                                        │ │
+│  │  ┌─────────────────────────────────────────────────────────────┐  │ │
+│  │  │  AnonymizerWorker Thread (Consumer)                         │  │ │
+│  │  │  • Queue.get() → Get from Queue                            │  │ │
+│  │  │  • Roboflow Head Detection (heads-detection/1)             │  │ │
+│  │  │  • Gaussian Blur Anonymization                              │  │ │
+│  │  │  • Save to Database                                         │  │ │
+│  │  │  • Cloudinary Upload                                        │  │ │
+│  │  │  • Email/SMS Notifications                                  │  │ │
+│  │  └─────────────────────────────────────────────────────────────┘  │ │
+│  └─────────────────────────────────────────────────────────────────────┘ │
+└───────────────────────────────────────────────────────────────────────────┘
+                                    │
+                                    │
+┌───────────────────────────────────┴───────────────────────────────────┐
+│                    WARSTWA DANYCH (Database)                            │
+│                    SQLite + SQLAlchemy ORM                              │
+│                                                                          │
+│  ┌──────────────────┐  ┌──────────────────┐  ┌──────────────────┐     │
+│  │   User Table     │  │  Detection Table│  │  Settings Table │     │
+│  │  • id            │  │  • id           │  │  • id           │     │
+│  │  • username      │  │  • timestamp    │  │  • schedule     │     │
+│  │  • password_hash │  │  • location     │  │  • roi_zones    │     │
+│  └──────────────────┘  │  • confidence  │  │  • config       │     │
+│                        │  • image_path  │  │  • created_at   │     │
+│                        │  • status      │  │  • updated_at   │     │
+│                        │  • user_id     │  └──────────────────┘     │
+│                        └──────────────────┘                          │
+└───────────────────────────────────────────────────────────────────────┘
+
+┌─────────────────────────────────────────────────────────────────────────┐
+│                    ZEWNĘTRZNE SERWISY                                   │
+│  • Roboflow API (Head Detection)                                       │
+│  • Cloudinary (Image Storage)                                          │
+│  • Vonage API (SMS Notifications)                                      │
+│  • SMTP Server (Email Notifications)                                  │
+└─────────────────────────────────────────────────────────────────────────┘
+
+┌─────────────────────────────────────────────────────────────────────────┐
+│                    URZĄDZENIA SPRZĘTOWE                                 │
+│  • Camera (USB/Webcam) - OpenCV VideoCapture                           │
+└─────────────────────────────────────────────────────────────────────────┘
+
+LEGENDA:
+--------
+→  Komunikacja synchroniczna (HTTP, bezpośrednie wywołania)
+┴  Komunikacja asynchroniczna (Queue, Producer-Consumer)
+│  Zależność/przepływ danych
+

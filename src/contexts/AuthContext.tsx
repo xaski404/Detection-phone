@@ -23,6 +23,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const navigate = useNavigate();
 
   useEffect(() => {
+    // Check if user is already logged in
     const token = localStorage.getItem('auth_token');
     if (token) {
       setIsAuthenticated(true);
@@ -31,10 +32,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const login = async (username: string, password: string) => {
     try {
+      // ✅ FIXED: Real API call to Flask backend
       const response = await authAPI.login(username, password);
       
+      // Store auth token
       localStorage.setItem('auth_token', 'authenticated');
       setIsAuthenticated(true);
+      
+      console.log('✅ Login successful:', response);
       navigate('/dashboard');
     } catch (error: any) {
       console.error('❌ Login failed:', error);
@@ -44,7 +49,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const logout = async () => {
     try {
+      // ✅ FIXED: Real API call to Flask backend
       await authAPI.logout();
+      console.log('✅ Logout successful');
     } catch (error) {
       console.error('❌ Logout error:', error);
     } finally {

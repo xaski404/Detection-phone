@@ -185,11 +185,12 @@ class CameraController:
         """Verify if the selected camera is available and working"""
         try:
             cap = self._open_capture(self.camera_index)
-            if not cap.isOpened():
+            if cap is None or not cap.isOpened():
                 available_cameras = self.get_available_cameras()
                 if available_cameras:
                     self.camera_index = available_cameras[0]['index']
-            cap.release()
+            if cap is not None:
+                cap.release()
         except Exception as e:
             import logging
             logging.error(f"Error verifying camera: {e}")

@@ -1,0 +1,85 @@
+<mxfile host="app.diagrams.net">
+  <diagram name="System Architecture" id="system-arch">
+    <mxGraphModel dx="1422" dy="794" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1169" pageHeight="827" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        
+        <!-- Frontend Layer -->
+        <mxCell id="frontend" value="Frontend Layer&#xa;React + TypeScript + Material-UI&#xa;&#xa;• Dashboard&#xa;• Detections&#xa;• Settings&#xa;• Login" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontStyle=1" vertex="1" parent="1">
+          <mxGeometry x="400" y="40" width="200" height="120" as="geometry" />
+        </mxCell>
+        
+        <!-- Backend Layer -->
+        <mxCell id="backend" value="Backend Layer&#xa;Flask + Python&#xa;&#xa;• REST API&#xa;• Authentication&#xa;• Video Stream (MJPEG)&#xa;• Database ORM" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontStyle=1" vertex="1" parent="1">
+          <mxGeometry x="400" y="200" width="200" height="120" as="geometry" />
+        </mxCell>
+        
+        <!-- CameraController -->
+        <mxCell id="camera-controller" value="CameraController&#xa;(Main Thread - Producer)&#xa;&#xa;• Camera Capture&#xa;• Preprocessing (CLAHE)&#xa;• YOLOv8 Detection&#xa;• Queue.put()" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656" vertex="1" parent="1">
+          <mxGeometry x="200" y="360" width="180" height="120" as="geometry" />
+        </mxCell>
+        
+        <!-- Queue -->
+        <mxCell id="queue" value="Queue&#xa;(thread-safe)" style="shape=cylinder3;whiteSpace=wrap;html=1;boundedLbl=1;backgroundOutline=1;size=15;fillColor=#f8cecc;strokeColor=#b85450" vertex="1" parent="1">
+          <mxGeometry x="420" y="380" width="80" height="80" as="geometry" />
+        </mxCell>
+        
+        <!-- AnonymizerWorker -->
+        <mxCell id="worker" value="AnonymizerWorker&#xa;(Worker Thread - Consumer)&#xa;&#xa;• Queue.get()&#xa;• Roboflow Head Detection&#xa;• Gaussian Blur&#xa;• Database Save&#xa;• Notifications" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6" vertex="1" parent="1">
+          <mxGeometry x="560" y="360" width="180" height="140" as="geometry" />
+        </mxCell>
+        
+        <!-- Database -->
+        <mxCell id="database" value="Database Layer&#xa;SQLite + SQLAlchemy&#xa;&#xa;• User Table&#xa;• Detection Table&#xa;• Settings Table" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;fontStyle=1" vertex="1" parent="1">
+          <mxGeometry x="400" y="540" width="200" height="100" as="geometry" />
+        </mxCell>
+        
+        <!-- External Services -->
+        <mxCell id="external" value="External Services&#xa;&#xa;• Roboflow API&#xa;• Cloudinary&#xa;• Vonage (SMS)&#xa;• SMTP (Email)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;dashed=1" vertex="1" parent="1">
+          <mxGeometry x="680" y="540" width="180" height="100" as="geometry" />
+        </mxCell>
+        
+        <!-- Camera Hardware -->
+        <mxCell id="camera" value="Camera Hardware&#xa;USB/Webcam&#xa;OpenCV VideoCapture" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;dashed=1" vertex="1" parent="1">
+          <mxGeometry x="200" y="540" width="160" height="80" as="geometry" />
+        </mxCell>
+        
+        <!-- Arrows -->
+        <mxCell id="arrow1" value="HTTP/REST API" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeWidth=2" edge="1" parent="1" source="frontend" target="backend">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        
+        <mxCell id="arrow2" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeWidth=2;endArrow=block;endFill=0" edge="1" parent="1" source="backend" target="camera-controller">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        
+        <mxCell id="arrow3" value="Queue.put()" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeWidth=2;endArrow=block;endFill=0" edge="1" parent="1" source="camera-controller" target="queue">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        
+        <mxCell id="arrow4" value="Queue.get()" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeWidth=2;endArrow=block;endFill=0" edge="1" parent="1" source="queue" target="worker">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        
+        <mxCell id="arrow5" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeWidth=2;endArrow=block;endFill=0" edge="1" parent="1" source="camera-controller" target="camera">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        
+        <mxCell id="arrow6" value="SQLAlchemy" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeWidth=2;endArrow=block;endFill=0" edge="1" parent="1" source="worker" target="database">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        
+        <mxCell id="arrow7" value="API Calls" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeWidth=2;endArrow=block;endFill=0;dashed=1" edge="1" parent="1" source="worker" target="external">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        
+        <mxCell id="arrow8" value="SQLAlchemy" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeWidth=2;endArrow=block;endFill=0" edge="1" parent="1" source="backend" target="database">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>
+

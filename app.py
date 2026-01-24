@@ -1,4 +1,4 @@
-from flask import Flask, request, jsonify, send_from_directory, Response
+from flask import Flask, request, jsonify, send_from_directory, Response, send_file
 import time
 import cv2
 from flask_cors import CORS
@@ -25,11 +25,15 @@ load_dotenv()
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
+# Configure Flask to serve React build files
+BUILD_FOLDER = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'build')
 app = Flask(__name__)
 
+# CORS configuration for production (Azure) and development
+allowed_origins = os.getenv('CORS_ORIGINS', 'http://localhost:3000').split(',')
 CORS(
     app,
-    origins=["http://localhost:3000"],
+    origins=allowed_origins,
     supports_credentials=True,
 )
 
@@ -720,7 +724,72 @@ def config_snapshot():
         traceback.print_exc()
         return jsonify({'error': str(e)}), 500
 
+# ==========================================
+# SERWOWANIE FRONTENDU REACT
+# ==========================================
+
+# Serve static files from build/static directory
+# This route must be defined BEFORE the catch-all route
+@app.route('/static/<path:filename>')
+def serve_static(filename):
+    """Serve static files (JS, CSS, images) from build/static directory."""
+    static_folder = os.path.join(BUILD_FOLDER, 'static')
+    if os.path.exists(static_folder):
+        try:
+            return send_from_directory(static_folder, filename)
+        except Exception as e:
+            logger.warning(f"Error serving static file {filename}: {e}")
+            return jsonify({'error': 'Static file not found'}), 404
+    else:
+        logger.warning(f"Static folder not found: {static_folder}")
+        return jsonify({'error': 'Static folder not found'}), 404
+
+# Serve React frontend - catch-all route for SPA routing
+# Must be LAST (after all API routes)
+@app.route('/', defaults={'path': ''})
+@app.route('/<path:path>')
+def serve_react_app(path):
+    """Serve React frontend. Handles both root path and React Router routes."""
+    # Skip API routes (should not reach here, but safety check)
+    if path.startswith('api/'):
+        return jsonify({'error': 'API endpoint not found'}), 404
+    
+    # Skip static files (handled by serve_static route above)
+    if path.startswith('static/'):
+        static_filename = path.replace('static/', '', 1)
+        return serve_static(static_filename)
+    
+    # Try to serve file from build directory (e.g., manifest.json, robots.txt)
+    if path != '':
+        file_path = os.path.join(BUILD_FOLDER, path)
+        if os.path.exists(file_path) and os.path.isfile(file_path):
+            return send_from_directory(BUILD_FOLDER, path)
+    
+    # For root path or React Router routes - serve index.html
+    index_path = os.path.join(BUILD_FOLDER, 'index.html')
+    if os.path.exists(index_path):
+        return send_file(index_path)
+    else:
+        # If build folder doesn't exist, return helpful message
+        return jsonify({
+            'message': 'React frontend not built. Please run "npm run build" first.',
+            'api_status': 'running',
+            'endpoints': {
+                'login': '/api/login',
+                'detections': '/api/detections',
+                'settings': '/api/settings',
+                'camera_status': '/api/camera/status'
+            }
+        }), 200
+
 if __name__ == '__main__':
     with app.app_context():
         db.create_all()
-    app.run(debug=True, port=5000) 
+    
+    # Get port from environment variable or default to 5000
+    port = int(os.getenv('PORT', 5000))
+    debug = os.getenv('FLASK_DEBUG', 'False').lower() == 'true'
+    host = os.getenv('HOST', '0.0.0.0')
+    
+    logger.info(f"Starting Flask app on {host}:{port} (debug={debug})")
+    app.run(debug=debug, host=host, port=port) 

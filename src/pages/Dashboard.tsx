@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   Box,
   Grid,
@@ -45,6 +46,7 @@ import {
 import { dashboardAPI, DashboardStats } from '../services/api';
 import { handleDownloadImage } from '../utils/download';
 
+// KPI Card Component
 interface KPICardProps {
   title: string;
   value: string | number;
@@ -138,10 +140,12 @@ const KPICard: React.FC<KPICardProps> = ({ title, value, change, icon, color }) 
 };
 
 const Dashboard: React.FC = () => {
+  // ✅ FIXED: Fetch real data from API
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [chartData, setChartData] = useState<Array<{ name: string; count: number }>>([]);
+  const navigate = useNavigate();
 
   useEffect(() => {
     const fetchData = async () => {
@@ -149,9 +153,17 @@ const Dashboard: React.FC = () => {
         setLoading(true);
         const data = await dashboardAPI.getStats();
         setStats(data);
+        console.log('✅ Dashboard data loaded:', data);
         setError(null);
       } catch (err: any) {
         console.error('❌ Failed to fetch dashboard data:', err);
+        // Redirect to login instead of showing error
+        const token = localStorage.getItem('auth_token');
+        if (!token || err.response?.status === 401) {
+          localStorage.removeItem('auth_token');
+          navigate('/login');
+          return;
+        }
         setError('Failed to load dashboard data. Please try again.');
       } finally {
         setLoading(false);
@@ -159,6 +171,7 @@ const Dashboard: React.FC = () => {
     };
 
     fetchData();
+    // fetch chart data
     const fetchChart = async () => {
       try {
         const res = await fetch('http://localhost:5000/api/stats/detections_over_time');
@@ -170,6 +183,7 @@ const Dashboard: React.FC = () => {
     };
     fetchChart();
     
+    // Refresh data every 30 seconds
     const interval = setInterval(fetchData, 30000);
     return () => clearInterval(interval);
   }, []);
@@ -190,6 +204,7 @@ const Dashboard: React.FC = () => {
     );
   }
 
+  // Use fetched data or fallback to defaults
   const totalDetections = stats?.total_detections ?? 0;
   const todayDetections = stats?.today_detections ?? 0;
   const cameraStatus = stats?.camera_status ?? 'Offline';
@@ -201,6 +216,7 @@ const Dashboard: React.FC = () => {
   return (
     <Box sx={{ flexGrow: 1 }}>
       <Grid container spacing={3}>
+        {/* KPI Cards */}
         <Grid item xs={12} sm={6} lg={4}>
           <KPICard
             title="Total Detections"
@@ -228,6 +244,7 @@ const Dashboard: React.FC = () => {
           />
         </Grid>
 
+        {/* Detections Over Time Chart */}
         <Grid item xs={12} lg={12}>
           <Paper sx={{ p: 3, height: '480px' }}>
             <Typography variant="h6" gutterBottom sx={{ fontWeight: 600, mb: 3 }}>
@@ -270,6 +287,7 @@ const Dashboard: React.FC = () => {
 
         
 
+        {/* Recent Detections Table */}
         <Grid item xs={12}>
           <Paper sx={{ p: 3 }}>
             <Typography variant="h6" gutterBottom sx={{ fontWeight: 600, mb: 3 }}>

@@ -1,53 +1,53 @@
 import { createTheme, alpha } from '@mui/material/styles';
 
-
+// Color palette - Professional dark theme for security/monitoring app
 const palette = {
   mode: 'dark' as const,
   primary: {
-    main: '#3B82F6',
+    main: '#3B82F6',      // Bright Blue
     light: '#60A5FA',
     dark: '#2563EB',
     contrastText: '#FFFFFF',
   },
   secondary: {
-    main: '#10B981',
+    main: '#10B981',      // Emerald Green
     light: '#34D399',
     dark: '#059669',
     contrastText: '#FFFFFF',
   },
   error: {
-    main: '#EF4444',
+    main: '#EF4444',      // Red
     light: '#F87171',
     dark: '#DC2626',
   },
   warning: {
-    main: '#F59E0B',
+    main: '#F59E0B',      // Amber
     light: '#FBBF24',
     dark: '#D97706',
   },
   info: {
-    main: '#3B82F6',
+    main: '#3B82F6',      // Blue
     light: '#60A5FA',
     dark: '#2563EB',
   },
   success: {
-    main: '#10B981',
+    main: '#10B981',      // Green
     light: '#34D399',
     dark: '#059669',
   },
   background: {
-    default: '#0F172A',
-    paper: '#1E293B',
+    default: '#0F172A',   // Slate 900
+    paper: '#1E293B',     // Slate 800
   },
   text: {
-    primary: '#F1F5F9',
-    secondary: '#CBD5E1',
-    disabled: '#64748B',
+    primary: '#F1F5F9',   // Slate 100
+    secondary: '#CBD5E1',  // Slate 300
+    disabled: '#64748B',   // Slate 500
   },
   divider: alpha('#CBD5E1', 0.12),
 };
 
-
+// Typography configuration
 const typography = {
   fontFamily: "'Inter', 'Roboto', 'Helvetica Neue', sans-serif",
   h1: {
@@ -101,7 +101,7 @@ const typography = {
   },
 };
 
-
+// Create the theme
 const theme = createTheme({
   palette,
   typography,

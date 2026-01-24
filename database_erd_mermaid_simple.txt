@@ -1,0 +1,29 @@
+erDiagram
+    User {
+        int id PK
+        string username UK
+        string password_hash
+    }
+
+    Detection {
+        int id PK
+        datetime timestamp
+        string location
+        float confidence
+        string image_path
+        string status
+        int user_id FK
+    }
+
+    Settings {
+        int id PK
+        json schedule
+        json roi_zones
+        json config
+        datetime created_at
+        datetime updated_at
+    }
+
+    User ||--o{ Detection : "tworzy"
+
+

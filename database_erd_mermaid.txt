@@ -1,0 +1,38 @@
+erDiagram
+    %% Tabela Użytkowników
+    User {
+        int id PK "Klucz główny"
+        string username UK "Nazwa użytkownika (unikalna)"
+        string password_hash "Hash hasła (Werkzeug)"
+    }
+
+    %% Tabela Detekcji (Główna) - 7 kolumn
+    Detection {
+        int id PK "Unikalne ID zdarzenia"
+        datetime timestamp "Czas wystąpienia (NOT NULL, default=utcnow)"
+        string location "Strefa ROI lub nazwa kamery (max 100)"
+        float confidence "Pewność detekcji YOLOv8 (0.0-1.0)"
+        string image_path "Nazwa pliku obrazu (max 200)"
+        string status "Status detekcji (np. 'Pending', max 20)"
+        int user_id FK "Powiązany użytkownik (nullable)"
+    }
+
+    %% Tabela Ustawień Systemu
+    Settings {
+        int id PK "Klucz główny"
+        json schedule "Harmonogram pracy kamery (JSON)"
+        json roi_zones "Współrzędne stref ROI (JSON array)"
+        json config "Konfiguracja systemu (JSON)"
+        datetime created_at "Data utworzenia (NOT NULL)"
+        datetime updated_at "Data modyfikacji (NOT NULL, auto-update)"
+    }
+
+    %% Relacje
+    User ||--o{ Detection : "tworzy/nadzoruje"
+    
+    %% Uwagi:
+    %% - user_id w Detection jest nullable=True, więc detekcja może nie mieć przypisanego użytkownika
+    %% - Settings nie ma relacji z innymi tabelami (singleton pattern)
+    %% - Wszystkie 7 kolumn tabeli Detection są uwzględnione
+
+
