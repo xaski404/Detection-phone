@@ -1,5 +1,6 @@
 import threading
 import time
+import sys
 from datetime import datetime, timedelta, time as dt_time
 import cv2
 from ultralytics import YOLO
@@ -118,35 +119,24 @@ class CameraController:
         self.camera_thread.start()
 
     def _open_capture(self, index):
-        """Open a cv2.VideoCapture STRICTLY for the selected index.
-
-        Order:
-        1) Default backend (MSMF on Windows) - preferred for virtual cams like Iriun
-        2) DirectShow (CAP_DSHOW) as the only fallback for the SAME index
-        No other indices or backends are attempted here.
-        """
-        
-        cap = cv2.VideoCapture(index)
-        if cap is not None and cap.isOpened():
-            return cap
-        try:
-            cap.release()
-        except Exception:
-            pass
-
-
-        try:
-            cap = cv2.VideoCapture(index, cv2.CAP_DSHOW)
-            if cap is not None and cap.isOpened():
-                return cap
-            if cap is not None:
-                cap.release()
-        except Exception:
+        """Open a cv2.VideoCapture for the selected index.
+        On Windows uses only DirectShow (CAP_DSHOW) to avoid MSMF warnings."""
+        backends = [('dshow', cv2.CAP_DSHOW)] if sys.platform == 'win32' else [('default', None)]
+        if sys.platform != 'win32':
+            backends.append(('dshow', cv2.CAP_DSHOW))
+        for _name, backend in backends:
             try:
-                cap.release()
+                cap = cv2.VideoCapture(index, backend) if backend is not None else cv2.VideoCapture(index)
+                if cap is not None and cap.isOpened():
+                    return cap
+                if cap is not None:
+                    cap.release()
             except Exception:
-                pass
-
+                try:
+                    if 'cap' in locals() and cap is not None:
+                        cap.release()
+                except Exception:
+                    pass
         return None
 
     def _get_camera_name_by_index(self, index):
@@ -185,12 +175,11 @@ class CameraController:
         """Verify if the selected camera is available and working"""
         try:
             cap = self._open_capture(self.camera_index)
-            if cap is None or not cap.isOpened():
+            if not cap.isOpened():
                 available_cameras = self.get_available_cameras()
                 if available_cameras:
                     self.camera_index = available_cameras[0]['index']
-            if cap is not None:
-                cap.release()
+            cap.release()
         except Exception as e:
             import logging
             logging.error(f"Error verifying camera: {e}")
@@ -303,31 +292,25 @@ class CameraController:
             self.camera_index = self.assigned_camera_index
 
             self.camera = None
-            last_error = None
-
-            for backend in ('default', 'dshow'):
-                if backend == 'default':
-                    cap = cv2.VideoCapture(self.camera_index)
-                else:
-                    cap = cv2.VideoCapture(self.camera_index, cv2.CAP_DSHOW)
-
+            # Na Windows tylko DirectShow – unikamy ostrzeżeń MSMF "Failed to select stream 0"
+            backends = [('dshow', cv2.CAP_DSHOW)] if sys.platform == 'win32' else [('default', None), ('dshow', cv2.CAP_DSHOW)]
+            for _name, backend in backends:
+                cap = cv2.VideoCapture(self.camera_index, backend) if backend is not None else cv2.VideoCapture(self.camera_index)
                 if cap is not None and cap.isOpened() and self._capture_has_valid_frame(cap):
                     self.camera = cap
                     break
-
                 if cap is not None:
                     try:
                         cap.release()
                     except Exception:
                         pass
-                last_error = f"Failed to open STRICT camera index {self.camera_index} using backend {backend}"
 
             if self.camera is None or not self.camera.isOpened():
                 import logging
                 logging.error(f"Cannot open camera (Index: {self.assigned_camera_index}). Camera may be in use by another application.")
                 self.is_running = False
                 self.camera = None
-                return
+                return False
             
             try:
                 self.camera.set(cv2.CAP_PROP_FOURCC, cv2.VideoWriter_fourcc(*'MJPG'))
@@ -349,42 +332,43 @@ class CameraController:
             width = int(self.camera.get(cv2.CAP_PROP_FRAME_WIDTH))
             height = int(self.camera.get(cv2.CAP_PROP_FRAME_HEIGHT))
             fps = self.camera.get(cv2.CAP_PROP_FPS)
-            
+
             self.is_running = True
-            
+            return True
+
         except Exception as e:
             import logging
             logging.error(f"Error starting camera: {e}")
             self.is_running = False
             if self.camera is not None:
-                self.camera.release()
+                try:
+                    self.camera.release()
+                except Exception:
+                    pass
                 self.camera = None
+            return False
 
     def _open_camera_for_loop(self):
         """Otwiera kamerę bez tworzenia nowego wątku (używane z wewnątrz _camera_loop)."""
         try:
             self.camera_index = self.assigned_camera_index
             self.camera = None
-            
-            for backend in ('default', 'dshow'):
-                if backend == 'default':
-                    cap = cv2.VideoCapture(self.camera_index)
-                else:
-                    cap = cv2.VideoCapture(self.camera_index, cv2.CAP_DSHOW)
-                
+
+            backends = [('dshow', cv2.CAP_DSHOW)] if sys.platform == 'win32' else [('default', None), ('dshow', cv2.CAP_DSHOW)]
+            for _name, backend in backends:
+                cap = cv2.VideoCapture(self.camera_index, backend) if backend is not None else cv2.VideoCapture(self.camera_index)
                 if cap is not None and cap.isOpened() and self._capture_has_valid_frame(cap):
                     self.camera = cap
                     break
-                
                 if cap is not None:
                     try:
                         cap.release()
                     except Exception:
                         pass
-            
+
             if self.camera is None or not self.camera.isOpened():
                 return False
-            
+
             try:
                 self.camera.set(cv2.CAP_PROP_FOURCC, cv2.VideoWriter_fourcc(*'MJPG'))
             except Exception:
@@ -492,7 +476,34 @@ class CameraController:
 
         return None
 
-    def trigger_throttled_notification(self, zone_name, frame, confidence):
+    @staticmethod
+    def _draw_phone_annotation(frame, x1, y1, x2, y2, confidence, zone_name=None, box_thickness=2, font_scale=0.6):
+        """Rysuje bounding box smartfona i etykietę z tłem (czytelna na każdym tle)."""
+        try:
+            h, w = frame.shape[:2]
+            x1 = max(0, min(x1, w - 1))
+            y1 = max(0, min(y1, h - 1))
+            x2 = max(0, min(x2, w - 1))
+            y2 = max(0, min(y2, h - 1))
+            if x2 <= x1 or y2 <= y1:
+                return
+            color = (0, 0, 255)  # BGR czerwony
+            cv2.rectangle(frame, (x1, y1), (x2, y2), color, box_thickness)
+            label = f"Smartfon: {confidence * 100:.0f}%"
+            if zone_name:
+                label += f" [{zone_name}]"
+            font = cv2.FONT_HERSHEY_SIMPLEX
+            thickness = 2
+            (tw, th), baseline = cv2.getTextSize(label, font, font_scale, thickness)
+            pad = 4
+            text_y = max(th + pad + 2, y1 - 4)
+            # Tło pod etykietą (czytelność na każdym tle)
+            cv2.rectangle(frame, (x1, text_y - th - pad), (x1 + tw + 2 * pad, text_y + baseline + pad), color, -1)
+            cv2.putText(frame, label, (x1 + pad, text_y), font, font_scale, (255, 255, 255), thickness)
+        except Exception:
+            pass
+
+    def trigger_throttled_notification(self, zone_name, frame, confidence, bbox=None):
         """Sprawdza wyciszenie i wysyła powiadomienie dla danej strefy."""
         now = datetime.now()
 
@@ -507,15 +518,16 @@ class CameraController:
                 else:
                     self.alert_mute_until.pop(zone_name, None)
 
-            self._handle_detection(frame, confidence, zone_name)
+            self._handle_detection(frame, confidence, zone_name, bbox=bbox)
             self.alert_mute_until[zone_name] = now + self.mute_duration
 
-    def _handle_detection(self, frame, confidence, zone_name=None):
+    def _handle_detection(self, frame, confidence, zone_name=None, bbox=None):
         """
         Obsługuje wykrycie telefonu:
-        1. Zapisuje ORYGINALNĄ klatkę (bez zamazanych głów!)
-        2. Dodaje do kolejki dla AnonymizerWorker z ZAMROŻONĄ konfiguracją blur
-        3. Worker zamaże głowy (jeśli włączone) i doda do DB
+        1. Rysuje bounding box smartfona na klatce (jeśli podano bbox)
+        2. Zapisuje klatkę do pliku
+        3. Dodaje do kolejki dla AnonymizerWorker (blur głów, DB)
+        bbox: (x1, y1, x2, y2) w pikselach lub None
         """
         try:
             os.makedirs('detections', exist_ok=True)
@@ -527,8 +539,17 @@ class CameraController:
             if frame is None or frame.size == 0:
                 raise Exception("Invalid frame: None or empty")
             
+            # Na zapisywanym zdjęciu rysuj bounding box smartfona (widoczny w zakładce Detections)
+            save_frame = frame.copy()
+            if bbox is not None and len(bbox) >= 4:
+                try:
+                    x1, y1, x2, y2 = int(bbox[0]), int(bbox[1]), int(bbox[2]), int(bbox[3])
+                    self._draw_phone_annotation(save_frame, x1, y1, x2, y2, confidence, zone_name, box_thickness=2, font_scale=0.6)
+                except Exception:
+                    pass
+            
             try:
-                success = cv2.imwrite(filepath, frame)
+                success = cv2.imwrite(filepath, save_frame)
                 if not success:
                     raise Exception("Failed to save detection image")
             except cv2.error as cv_err:
@@ -735,12 +756,24 @@ class CameraController:
                                     center_x = (bx1 + bx2) / 2.0
                                     center_y = (by1 + by2) / 2.0
                                     
-                                    matched_zone = self.find_matching_zone(center_x, center_y, frame_width, frame_height)
+                                    # Zawsze rysuj bounding box wykrytego smartfona (ten sam styl co na zapisanych zdjęciach)
+                                    x1, y1, x2, y2 = map(int, box.xyxy[0])
+                                    x1 = max(0, min(x1, frame_width - 1))
+                                    y1 = max(0, min(y1, frame_height - 1))
+                                    x2 = max(0, min(x2, frame_width - 1))
+                                    y2 = max(0, min(y2, frame_height - 1))
+                                    if x2 > x1 and y2 > y1:
+                                        try:
+                                            matched_zone = self.find_matching_zone(center_x, center_y, frame_width, frame_height)
+                                            self._draw_phone_annotation(display_frame, x1, y1, x2, y2, confidence, matched_zone, box_thickness=2, font_scale=0.55)
+                                        except Exception:
+                                            pass
                                     
+                                    matched_zone = self.find_matching_zone(center_x, center_y, frame_width, frame_height)
                                     if matched_zone:
                                         try:
                                             frame_copy = frame.copy()
-                                            self.trigger_throttled_notification(matched_zone, frame_copy, confidence)
+                                            self.trigger_throttled_notification(matched_zone, frame_copy, confidence, bbox=(x1, y1, x2, y2))
                                         except cv2.error as copy_err:
                                             opencv_error_count += 1
                                         except Exception:
@@ -757,25 +790,6 @@ class CameraController:
                                                 x1f, y1f, x2f, y2f = 0.0, 0.0, 1.0, 1.0
                                             norm_cx = center_x / max(1, frame_width)
 
-                                    x1, y1, x2, y2 = map(int, box.xyxy[0])
-                                    
-                                    x1 = max(0, min(x1, frame_width - 1))
-                                    y1 = max(0, min(y1, frame_height - 1))
-                                    x2 = max(0, min(x2, frame_width - 1))
-                                    y2 = max(0, min(y2, frame_height - 1))
-                                    
-                                    if x2 > x1 and y2 > y1:
-                                        try:
-                                            cv2.rectangle(display_frame, (x1, y1), (x2, y2), (0, 0, 255), 2)
-                                            text_y = max(10, y1 - 10)
-                                            label = f"Phone: {confidence:.2f}"
-                                            if matched_zone:
-                                                label += f" [{matched_zone}]"
-                                            cv2.putText(display_frame, label, (x1, text_y),
-                                                        cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 255), 2)
-                                        except Exception:
-                                            pass
-                                    
                                 if class_id == 0 and confidence >= 0.5:
                                     x1, y1, x2, y2 = map(int, box.xyxy[0])
                                     
@@ -794,6 +808,9 @@ class CameraController:
                                             pass
                     except Exception:
                         pass
+                # Podgląd pokazuje klatkę z narysowanymi bounding boxami (smartfon, osoba)
+                with self.frame_lock:
+                    self.last_frame = display_frame
                 
             except cv2.error as e:
                 opencv_error_count += 1
@@ -934,27 +951,21 @@ class CameraController:
 
     @staticmethod
     def _open_capture_static(index):
-        """Static helper to open VideoCapture (same logic as instance method)"""
-        cap = cv2.VideoCapture(index)
-        if cap is not None and cap.isOpened():
-            return cap
-        try:
-            cap.release()
-        except Exception:
-            pass
-
-        try:
-            cap = cv2.VideoCapture(index, cv2.CAP_DSHOW)
-            if cap is not None and cap.isOpened():
-                return cap
-            if cap is not None:
-                cap.release()
-        except Exception:
+        """Static helper to open VideoCapture. On Windows uses only CAP_DSHOW."""
+        backends = [(cv2.CAP_DSHOW,)] if sys.platform == 'win32' else [(None,), (cv2.CAP_DSHOW,)]
+        for (backend,) in backends:
             try:
-                cap.release()
+                cap = cv2.VideoCapture(index, backend) if backend is not None else cv2.VideoCapture(index)
+                if cap is not None and cap.isOpened():
+                    return cap
+                if cap is not None:
+                    cap.release()
             except Exception:
-                pass
-
+                try:
+                    if 'cap' in locals() and cap is not None:
+                        cap.release()
+                except Exception:
+                    pass
         return None
 
     @staticmethod
