@@ -36,6 +36,7 @@ class CameraController:
         self.thread = None
         self.last_frame = None
         self.frame_lock = threading.Lock()
+        self.camera_state_lock = threading.Lock()
         
         if camera_name:
             self.camera_index = self.find_camera_by_name(camera_name)
@@ -283,136 +284,140 @@ class CameraController:
 
     def start_camera(self):
         """Start the camera and detection process (STRICT selected index only)."""
-        if self.is_running:
-            return
-        
-        try:
-            self.manual_stop_engaged = False
-            self.camera_was_manually_started = True
-            self.camera_index = self.assigned_camera_index
-
-            self.camera = None
-            # Na Windows tylko DirectShow – unikamy ostrzeżeń MSMF "Failed to select stream 0"
-            backends = [('dshow', cv2.CAP_DSHOW)] if sys.platform == 'win32' else [('default', None), ('dshow', cv2.CAP_DSHOW)]
-            for _name, backend in backends:
-                cap = cv2.VideoCapture(self.camera_index, backend) if backend is not None else cv2.VideoCapture(self.camera_index)
-                if cap is not None and cap.isOpened() and self._capture_has_valid_frame(cap):
-                    self.camera = cap
-                    break
-                if cap is not None:
-                    try:
-                        cap.release()
-                    except Exception:
-                        pass
-
-            if self.camera is None or not self.camera.isOpened():
-                import logging
-                logging.error(f"Cannot open camera (Index: {self.assigned_camera_index}). Camera may be in use by another application.")
-                self.is_running = False
-                self.camera = None
-                return False
+        with self.camera_state_lock:
+            if self.is_running:
+                return True
             
             try:
-                self.camera.set(cv2.CAP_PROP_FOURCC, cv2.VideoWriter_fourcc(*'MJPG'))
-            except Exception:
-                pass
-
-            preferred_res = [(1280, 720), (640, 480)]
-            applied = None
-            for w, h in preferred_res:
+                self.manual_stop_engaged = False
+                self.camera_was_manually_started = True
+                self.camera_index = self.assigned_camera_index
+    
+                self.camera = None
+                # Na Windows tylko DirectShow – unikamy ostrzeżeń MSMF "Failed to select stream 0"
+                backends = [('dshow', cv2.CAP_DSHOW)] if sys.platform == 'win32' else [('default', None), ('dshow', cv2.CAP_DSHOW)]
+                for _name, backend in backends:
+                    cap = cv2.VideoCapture(self.camera_index, backend) if backend is not None else cv2.VideoCapture(self.camera_index)
+                    if cap is not None and cap.isOpened() and self._capture_has_valid_frame(cap):
+                        self.camera = cap
+                        break
+                    if cap is not None:
+                        try:
+                            cap.release()
+                        except Exception:
+                            pass
+    
+                if self.camera is None or not self.camera.isOpened():
+                    import logging
+                    logging.error(f"Cannot open camera (Index: {self.assigned_camera_index}). Camera may be in use by another application.")
+                    self.is_running = False
+                    self.camera = None
+                    return False
+                
                 try:
-                    self.camera.set(cv2.CAP_PROP_FRAME_WIDTH, w)
-                    self.camera.set(cv2.CAP_PROP_FRAME_HEIGHT, h)
-                except Exception:
-                    continue
-                if self._capture_has_valid_frame(self.camera, warmup_reads=5, delay_s=0.05):
-                    applied = (w, h)
-                    break
-
-            width = int(self.camera.get(cv2.CAP_PROP_FRAME_WIDTH))
-            height = int(self.camera.get(cv2.CAP_PROP_FRAME_HEIGHT))
-            fps = self.camera.get(cv2.CAP_PROP_FPS)
-
-            self.is_running = True
-            return True
-
-        except Exception as e:
-            import logging
-            logging.error(f"Error starting camera: {e}")
-            self.is_running = False
-            if self.camera is not None:
-                try:
-                    self.camera.release()
+                    self.camera.set(cv2.CAP_PROP_FOURCC, cv2.VideoWriter_fourcc(*'MJPG'))
                 except Exception:
                     pass
-                self.camera = None
-            return False
+    
+                preferred_res = [(1280, 720), (640, 480)]
+                applied = None
+                for w, h in preferred_res:
+                    try:
+                        self.camera.set(cv2.CAP_PROP_FRAME_WIDTH, w)
+                        self.camera.set(cv2.CAP_PROP_FRAME_HEIGHT, h)
+                    except Exception:
+                        continue
+                    if self._capture_has_valid_frame(self.camera, warmup_reads=5, delay_s=0.05):
+                        applied = (w, h)
+                        break
+    
+                width = int(self.camera.get(cv2.CAP_PROP_FRAME_WIDTH))
+                height = int(self.camera.get(cv2.CAP_PROP_FRAME_HEIGHT))
+                fps = self.camera.get(cv2.CAP_PROP_FPS)
+    
+                self.is_running = True
+                return True
+
+            except Exception as e:
+                import logging
+                logging.error(f"Error starting camera: {e}")
+                self.is_running = False
+                if self.camera is not None:
+                    try:
+                        self.camera.release()
+                    except Exception:
+                        pass
+                    self.camera = None
+                return False
 
     def _open_camera_for_loop(self):
         """Otwiera kamerę bez tworzenia nowego wątku (używane z wewnątrz _camera_loop)."""
-        try:
-            self.camera_index = self.assigned_camera_index
-            self.camera = None
+        with self.camera_state_lock:
+            try:
+                self.camera_index = self.assigned_camera_index
+                self.camera = None
 
-            backends = [('dshow', cv2.CAP_DSHOW)] if sys.platform == 'win32' else [('default', None), ('dshow', cv2.CAP_DSHOW)]
-            for _name, backend in backends:
-                cap = cv2.VideoCapture(self.camera_index, backend) if backend is not None else cv2.VideoCapture(self.camera_index)
-                if cap is not None and cap.isOpened() and self._capture_has_valid_frame(cap):
-                    self.camera = cap
-                    break
-                if cap is not None:
+                backends = [('dshow', cv2.CAP_DSHOW)] if sys.platform == 'win32' else [('default', None), ('dshow', cv2.CAP_DSHOW)]
+                for _name, backend in backends:
+                    cap = cv2.VideoCapture(self.camera_index, backend) if backend is not None else cv2.VideoCapture(self.camera_index)
+                    if cap is not None and cap.isOpened() and self._capture_has_valid_frame(cap):
+                        self.camera = cap
+                        break
+                    if cap is not None:
+                        try:
+                            cap.release()
+                        except Exception:
+                            pass
+    
+                if self.camera is None or not self.camera.isOpened():
+                    return False
+    
+                try:
+                    self.camera.set(cv2.CAP_PROP_FOURCC, cv2.VideoWriter_fourcc(*'MJPG'))
+                except Exception:
+                    pass
+                
+                preferred_res = [(1280, 720), (640, 480)]
+                for w, h in preferred_res:
                     try:
-                        cap.release()
+                        self.camera.set(cv2.CAP_PROP_FRAME_WIDTH, w)
+                        self.camera.set(cv2.CAP_PROP_FRAME_HEIGHT, h)
                     except Exception:
+                        continue
+                    if self._capture_has_valid_frame(self.camera, warmup_reads=5, delay_s=0.05):
+                        break
+                
+                self.is_running = True
+                return True
+                
+            except Exception as e:
+                import logging
+                logging.error(f"Error opening camera: {e}")
+                self.is_running = False
+                if self.camera is not None:
+                    try:
+                        self.camera.release()
+                    except:
                         pass
-
-            if self.camera is None or not self.camera.isOpened():
+                    self.camera = None
                 return False
 
-            try:
-                self.camera.set(cv2.CAP_PROP_FOURCC, cv2.VideoWriter_fourcc(*'MJPG'))
-            except Exception:
-                pass
-            
-            preferred_res = [(1280, 720), (640, 480)]
-            for w, h in preferred_res:
-                try:
-                    self.camera.set(cv2.CAP_PROP_FRAME_WIDTH, w)
-                    self.camera.set(cv2.CAP_PROP_FRAME_HEIGHT, h)
-                except Exception:
-                    continue
-                if self._capture_has_valid_frame(self.camera, warmup_reads=5, delay_s=0.05):
-                    break
-            
-            self.is_running = True
-            return True
-            
-        except Exception as e:
-            import logging
-            logging.error(f"Error opening camera: {e}")
+    def _stop_camera_for_loop(self):
+        """Zatrzymuje kamerę bez czekania na wątek (używane z wewnątrz _camera_loop)."""
+        with self.camera_state_lock:
             self.is_running = False
             if self.camera is not None:
                 try:
                     self.camera.release()
-                except:
-                    pass
+                except Exception as e:
+                    import logging
+                    logging.error(f"Error closing camera: {e}")
                 self.camera = None
-            return False
-
-    def _stop_camera_for_loop(self):
-        """Zatrzymuje kamerę bez czekania na wątek (używane z wewnątrz _camera_loop)."""
-        self.is_running = False
-        if self.camera is not None:
-            try:
-                self.camera.release()
-            except Exception as e:
-                import logging
-                logging.error(f"Error closing camera: {e}")
-            self.camera = None
 
     def stop_camera(self):
         """Stop the camera and cleanup resources (GUI cleanup in main thread)."""
         self.is_running = False
+        self.manual_stop_engaged = True
         
         if hasattr(self, 'camera_thread') and self.camera_thread is not None:
             try:
@@ -420,12 +425,13 @@ class CameraController:
             except Exception:
                 pass
         
-        if self.camera is not None:
-            try:
-                self.camera.release()
-            except Exception:
-                pass
-            self.camera = None
+        with self.camera_state_lock:
+            if self.camera is not None:
+                try:
+                    self.camera.release()
+                except Exception:
+                    pass
+                self.camera = None
         
         try:
             try:
@@ -615,6 +621,33 @@ class CameraController:
             logging.error(f"Error enhancing frame: {e}")
             return frame
 
+    def _crop_letterbox(self, frame, threshold=5):
+        """
+        Usuwa programowo dodane czarne paski (letterboxing) na krawędziach obrazu.
+        Jest to konieczne, aby współrzędne stref ROI były zawsze poprawne, 
+        nawet gdy kamera (lub OBS) dynamicznie obcina/dodaje paski.
+        """
+        try:
+            gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+            rows_has_content = np.max(gray, axis=1) > threshold
+            cols_has_content = np.max(gray, axis=0) > threshold
+            
+            y_indices = np.where(rows_has_content)[0]
+            x_indices = np.where(cols_has_content)[0]
+            
+            if len(y_indices) == 0 or len(x_indices) == 0:
+                return frame
+                
+            y_min, y_max = y_indices[0], y_indices[-1]
+            x_min, x_max = x_indices[0], x_indices[-1]
+            
+            if y_min > 5 or (frame.shape[0] - y_max) > 6 or x_min > 5 or (frame.shape[1] - x_max) > 6:
+                return frame[y_min:y_max+1, x_min:x_max+1]
+                
+            return frame
+        except Exception:
+            return frame
+
     def _camera_loop(self):
         """Main camera loop for capturing and processing frames"""
         consecutive_failures = 0
@@ -691,6 +724,8 @@ class CameraController:
                 consecutive_failures = 0
                 opencv_error_count = 0
                 
+                frame = self._crop_letterbox(frame)
+                
                 try:
                     if not frame.data.contiguous:
                         frame = np.ascontiguousarray(frame)
@@ -741,6 +776,10 @@ class CameraController:
                             
                         results = self.model(enhanced_frame, verbose=False)
                         frame_height, frame_width = frame.shape[:2]
+                        enh_height, enh_width = enhanced_frame.shape[:2]
+                        
+                        scale_x = frame_width / max(1, enh_width)
+                        scale_y = frame_height / max(1, enh_height)
                         
                         for result in results:
                             if result.boxes is None:
@@ -753,11 +792,14 @@ class CameraController:
                                 confidence = float(box.conf[0])
                                 if class_id == self.phone_class_id and confidence >= self.settings['confidence_threshold']:
                                     bx1, by1, bx2, by2 = map(float, box.xyxy[0])
+                                    bx1, bx2 = bx1 * scale_x, bx2 * scale_x
+                                    by1, by2 = by1 * scale_y, by2 * scale_y
+
                                     center_x = (bx1 + bx2) / 2.0
                                     center_y = (by1 + by2) / 2.0
                                     
                                     # Zawsze rysuj bounding box wykrytego smartfona (ten sam styl co na zapisanych zdjęciach)
-                                    x1, y1, x2, y2 = map(int, box.xyxy[0])
+                                    x1, y1, x2, y2 = int(bx1), int(by1), int(bx2), int(by2)
                                     x1 = max(0, min(x1, frame_width - 1))
                                     y1 = max(0, min(y1, frame_height - 1))
                                     x2 = max(0, min(x2, frame_width - 1))
@@ -791,7 +833,11 @@ class CameraController:
                                             norm_cx = center_x / max(1, frame_width)
 
                                 if class_id == 0 and confidence >= 0.5:
-                                    x1, y1, x2, y2 = map(int, box.xyxy[0])
+                                    bx1, by1, bx2, by2 = map(float, box.xyxy[0])
+                                    bx1, bx2 = bx1 * scale_x, bx2 * scale_x
+                                    by1, by2 = by1 * scale_y, by2 * scale_y
+                                    
+                                    x1, y1, x2, y2 = int(bx1), int(by1), int(bx2), int(by2)
                                     
                                     x1 = max(0, min(x1, frame_width - 1))
                                     y1 = max(0, min(y1, frame_height - 1))
