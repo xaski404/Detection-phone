@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useState } from 'react';
+// import { useNavigate } from 'react-router-dom';
 import {
   Box,
   Container,
@@ -31,16 +31,10 @@ const Login: React.FC = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-  const { login, isAuthenticated } = useAuth();
-  const navigate = useNavigate();
+  const { login } = useAuth();
+  
 
-  // Redirect if already authenticated
-  useEffect(() => {
-    const token = localStorage.getItem('auth_token');
-    if (token || isAuthenticated) {
-      navigate('/dashboard', { replace: true });
-    }
-  }, [isAuthenticated, navigate]);
+  // Removed auto-redirect to fulfill user request of always showing login screen
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
